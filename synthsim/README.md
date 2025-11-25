@@ -1,0 +1,1 @@
+Put your folders for synthesis and simulation here (Vivado, Quartus Prime, Questa Prime, Modelsim, etc.)

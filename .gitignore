@@ -1,0 +1,4 @@
+.vscode
+
+synthsim/*
+!synthsim/README.md
