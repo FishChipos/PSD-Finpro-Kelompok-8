@@ -24,7 +24,7 @@ begin
     process (clock) is
     begin
         if (rising_edge(clock)) then
-            if (hold /= '1') then
+            if (hold = '0') then
                 shift;
             end if;
         end if;

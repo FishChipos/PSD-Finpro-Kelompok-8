@@ -9,7 +9,7 @@ entity cos_lookup_table is
     port (
         -- Mapped to 0 - 90.
         angle : in angle_t;
-        value : out fixed_point_t
+        cosine : out fixed_point_t
     );
 
     subtype angle_t is std_logic_vector(ANGLE_LENGTH - 1 downto 0);
@@ -25,5 +25,5 @@ begin
         rom(i) <= to_fixed_point(cos(real(to_integer(unsigned(angle), angle_t'length)) * MATH_PI_OVER_2 / real(ANGLES)));
     end generate;
 
-    value <= rom(to_integer(unsigned(angle), angle_t'length));
+    cosine <= rom(to_integer(unsigned(angle), angle_t'length));
 end architecture arch;
