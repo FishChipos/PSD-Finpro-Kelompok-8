@@ -56,7 +56,7 @@ begin
                         frequency_index := frequency_index + 1;
                         term := 0;
 
-                        frequencies(frequency) <= amplitude;
+                        frequencies(frequency_index) <= amplitude;
                         amplitude := 0.0;
                     end if;
 
