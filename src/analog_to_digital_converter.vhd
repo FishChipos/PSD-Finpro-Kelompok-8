@@ -7,7 +7,7 @@ use work.types.all;
 -- The ADC quantizes an input audio voltage into a word.
 entity analog_to_digital_converter is
     port (
-        raw : in audio_voltage;
+        raw : in audio_voltage_t;
         quantized : out word
     );
 end entity analog_to_digital_converter;

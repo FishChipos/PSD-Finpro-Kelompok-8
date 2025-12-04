@@ -5,7 +5,7 @@ use work.types.all;
 
 entity audio_equalizer is
     port (
-        input : in audio_voltage
+        input : in audio_voltage_t
     );
 end entity audio_equalizer;
 
@@ -17,10 +17,7 @@ architecture arch of audio_equalizer is
     signal quantized_input : word;
     signal sample : word;
 
-    constant SAMPLE_BUFFER_SIZE : natural := 16;
-    type sample_array is array (0 to SAMPLE_BUFFER_SIZE - 1) of word;
-
-    signal samples : sample_array;
+    signal samples : samples_t;
 begin
     -- Might replace this with a dedicated clock generator entity later.
     generate_clock : process is
@@ -45,13 +42,10 @@ begin
         );
     
     sample_buffer : entity sample_buffer(arch)
-        generic map (
-            buffer_size => SAMPLE_BUFFER_SIZE
-        )
         port map (
             clock => clock,
             hold => '0',
-            input => sample,
-            output => samples
+            sample => sample,
+            samples => samples
         );
 end architecture arch;
