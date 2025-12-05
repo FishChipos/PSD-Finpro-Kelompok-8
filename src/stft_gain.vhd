@@ -12,6 +12,8 @@ ENTITY stft_gain IS
 END ENTITY stft_gain;
 ARCHITECTURE rtl OF stft_gain IS
     SIGNAL product : signed(31 DOWNTO 0);
+    signal product_vector : STD_LOGIC_VECTOR(31 DOWNTO 0);
+    signal shifted_vector : STD_LOGIC_VECTOR(31 DOWNTO 0);
     SIGNAL scaled_product : signed(31 DOWNTO 0);
 
     CONSTANT FRACTIONAL_LENGTH : NATURAL := 5;
@@ -23,9 +25,10 @@ BEGIN
                 --multiplying 16 x 16 bit
                 product <= resize(signed(freq_amp), 32) * resize(signed(gain_val), 32);
 
-                -- shifting right to fix scaling
-                scaled_product <= signed(STD_LOGIC_VECTOR(product) SRL FRACTIONAL_LENGTH);
+                -- shift to fixed point format
+                scaled_product <= shift_Right(product, FRACTIONAL_LENGTH);
 
+                --output
                 eq_amp <= STD_LOGIC_VECTOR(scaled_product(15 DOWNTO 0));
             END IF;
         END IF;
