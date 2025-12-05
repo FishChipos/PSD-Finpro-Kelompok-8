@@ -56,10 +56,10 @@ begin
                     term := term + 1;
 
                     if (term = SAMPLE_BUFFER_SIZE) then
+                        frequency_amplitudes(frequency_index) <= amplitude;
+
                         frequency_index := frequency_index + 1;
                         term := 0;
-
-                        frequency_amplitudes(frequency_index) <= amplitude;
                         amplitude := to_fixed_point(0.0);
                     end if;
 
