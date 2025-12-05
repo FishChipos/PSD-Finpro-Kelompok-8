@@ -7,7 +7,7 @@ ENTITY stft_gain IS
         en, clk : IN STD_LOGIC;
         freq_amp : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
         gain_val : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
-        eq_amp : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
+        eq_amp : OUT STD_LOGIC_VECTOR(15 DOWNTO 0)
     );
 END ENTITY stft_gain;
 ARCHITECTURE rtl OF stft_gain IS
