@@ -3,6 +3,7 @@ use ieee.std_logic_1164.all;
 use ieee.math_real.all;
 
 use work.types.all;
+use work.fixed_point.all;
 
 package frequencies is
     type frequencies_t is array(natural range <>) of real;
@@ -41,5 +42,5 @@ package frequencies is
 
     constant FREQUENCY_COUNT : natural := frequencies'right + 1;
 
-    type frequency_amplitudes_t is array(natural range 0 to FREQUENCY_COUNT - 1) of word;
+    type frequency_amplitudes_t is array(natural range 0 to FREQUENCY_COUNT - 1) of fixed_point_t;
 end package frequencies;

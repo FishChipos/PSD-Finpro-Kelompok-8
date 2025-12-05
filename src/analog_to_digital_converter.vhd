@@ -5,6 +5,7 @@ use ieee.numeric_std.all;
 use work.types.all;
 
 -- The ADC quantizes an input audio voltage into a word.
+-- This is non-synthesizable and will always be as its inputs are analog.
 entity analog_to_digital_converter is
     port (
         raw : in audio_voltage_t;

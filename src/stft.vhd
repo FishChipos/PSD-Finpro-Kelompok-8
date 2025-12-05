@@ -1,8 +1,11 @@
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 use ieee.math_real.all;
 
 use work.types.all;
+use work.fixed_point.all;
+use work.angle.all;
 use work.frequencies.all;
 
 -- This will perform a Short-Time Fourier Transform (STFT) on input samples to produce an array of amplitudes corresponding to frequencies.
@@ -15,21 +18,21 @@ entity stft is
         start : in std_logic;
         done : out std_logic;
 
-        angle : out angle_t;
+        angle_index : out angle_index_t;
         cosine : in fixed_point_t
     );
 end entity stft;
 
 architecture arch of stft is
-    type transformer_state_t is (STFT_IDLE, STFT_CALCULATING, STFT_DONE);
-    signal state : transformer_state_t := STFT_IDLE;
+    type stft_state_t is (STFT_IDLE, STFT_CALCULATING, STFT_DONE);
+    signal state : stft_state_t := STFT_IDLE;
 begin
     calculate : process (clock) is
-        variable frequency, raw_angle : real;
+        variable frequency, raw_angle : fixed_point_t;
 
-        variable frequency_index : natural range 0 to FREQUENCIES'right := 0;
+        variable frequency_index : natural := 0;
         variable term : natural := 0;
-        variable amplitude : real := 0.0;
+        variable amplitude : fixed_point_t := to_fixed_point(0.0);
     begin
         if (rising_edge(clock)) then
             case (state) is
@@ -39,16 +42,16 @@ begin
                     if (start = '1') then
                         frequency_index := 0;
                         term := 0;
-                        amplitude := 0.0;
+                        amplitude := to_fixed_point(0.0);
                         state <= STFT_CALCULATING;
                     end if;
 
                 when STFT_CALCULATING =>
-                    frequency := FREQUENCIES(frequency_index);
+                    frequency := to_fixed_point(FREQUENCIES(frequency_index));
                 
-                    raw_angle := MATH_2_PI * frequency * term / SAMPLE_BUFFER_SIZE;
-                    angle <= to_angle_cos(raw_angle);
-                    amplitude := amplitude + samples(term) * adjust_quadrant_sign_cos(from_fixed_point(cosine), get_quadrant(raw_angle));
+                    raw_angle := FP_2_PI * frequency * to_fixed_point(term) / to_fixed_point(SAMPLE_BUFFER_SIZE);
+                    angle_index <= to_angle_index_cos(raw_angle);
+                    amplitude := amplitude + to_fixed_point(to_integer(unsigned(samples(term)))) * adjust_sign_cos(cosine, get_quadrant(raw_angle));
 
                     term := term + 1;
 
