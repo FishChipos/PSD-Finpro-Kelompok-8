@@ -54,7 +54,7 @@ begin
 
                     if (frequency_index = FREQUENCY_COUNT) then
                         -- might just add new helper function in fixed point packageg
-                        r_sample(sample_index) <= word(to_unsigned(to_integer(signed(sample_sum)) / (2 ** FRACTIONAL_LENGTH), word'length));
+                        r_sample(sample_index) <= word(to_signed(to_integer(signed(sample_sum)) / (2 ** FRACTIONAL_LENGTH), word'length));
 
                         sample_index := sample_index + 1;
                         frequency_index := 0;
