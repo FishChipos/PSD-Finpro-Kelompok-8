@@ -100,12 +100,17 @@ begin
             cosine => cosine
         );
 
-    gain_block : entity work.stft_gain(rtl)
-        PORT MAP (
-        en => clock, 
-        clk => gain_enable;
-        freq_amp  => STD_LOGIC_VECTOR(frequency_amplitudes(gain_index)),
-        gain_val => STD_LOGIC_VECTOR(gain(gain_index)),
-        eq_amp => eq_freq_amp(gain_index)
-        );
+    
+    -- to loop gain for each freq
+    generate_gain: for i in 0 to FREQUENCY_COUNT-1 generate
+    begin
+        gain_block : entity work.stft_gain(rtl)
+            PORT MAP (
+            en => gain_enable, 
+            clk => clocke;
+            freq_amp  => STD_LOGIC_VECTOR(frequency_amplitudes(gain_index)),
+            gain_val => STD_LOGIC_VECTOR(gain(gain_index)),
+            eq_amp => eq_freq_amp(gain_index)
+            );
+    end generate;
 end architecture arch;

@@ -21,10 +21,10 @@ BEGIN
         IF rising_edge(clk) THEN
             IF en = '1' THEN
                 --multiplying 16 x 16 bit
-                product <= resize(signed(freq_amp), 32) * (signed(gain_val), 32);
+                product <= resize(signed(freq_amp), 32) * resize(signed(gain_val), 32);
 
                 -- shifting right to fix scaling
-                scaled_product <= product SRL FRACTIONAL_LENGTH;
+                scaled_product <= signed(STD_LOGIC_VECTOR(product) SRL FRACTIONAL_LENGTH);
 
                 eq_amp <= STD_LOGIC_VECTOR(scaled_product(15 DOWNTO 0));
             END IF;
