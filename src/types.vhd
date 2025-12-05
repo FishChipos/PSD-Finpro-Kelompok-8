@@ -4,7 +4,7 @@ use ieee.numeric_std.all;
 use ieee.math_real.all;
 
 package types is
-    subtype audio_voltage_t is natural range 0 to 5;
+    subtype audio_voltage_t is real range 0.0 to 5.0;
 
     function map_voltage(voltage : audio_voltage_t; low : integer; high : integer) return integer;
 
@@ -18,6 +18,6 @@ end package types;
 package body types is 
     function map_voltage(voltage : audio_voltage_t; low : integer; high : integer) return integer is
     begin
-        return (voltage - audio_voltage_t'low) / (audio_voltage_t'high - audio_voltage_t'low) * (high - low) + low;        
+        return integer((voltage - audio_voltage_t'low) / (audio_voltage_t'high - audio_voltage_t'low) * real(high - low) + real(low));        
     end function map_voltage;
 end package body types;

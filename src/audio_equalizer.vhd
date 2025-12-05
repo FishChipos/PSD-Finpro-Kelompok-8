@@ -16,8 +16,7 @@ architecture arch of audio_equalizer is
     type eq_state_t is (EQ_SAMPLING, EQ_STFT, EQ_MIXING, EQ_INVERSE_STFT);
     signal state : eq_state_t := EQ_SAMPLING;
 
-    constant CLOCK_FREQUENCY : natural := 100_000_000;
-    constant CLOCK_PERIOD : time := 1 / CLOCK_FREQUENCY;
+    constant CLOCK_PERIOD : time := 10 ns;
     signal clock : std_logic;
 
     signal quantized_input : word;
@@ -40,11 +39,11 @@ begin
         wait for CLOCK_PERIOD / 2;
     end process generate_clock;
 
-    analog_to_digital_converter : entity work.analog_to_digital_converter(arch)
-        port map (
-            raw => input,
-            quantized => quantized_input
-        );
+    -- adc : entity work.adc(arch)
+    --     port map (
+    --         raw => input,
+    --         quantized => quantized_input
+    --     );
 
     sampler : entity work.sampler(arch)
         port map (

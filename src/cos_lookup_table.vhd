@@ -22,8 +22,8 @@ architecture arch of cos_lookup_table is
     signal rom : rom_t;
 begin
     generate_rom : for i in 0 to ANGLE_INDICES - 1 generate
-        rom(i) <= to_fixed_point(cos(i * MATH_PI_OVER_2 / (ANGLE_INDICES - 1)));
+        rom(i) <= to_fixed_point(cos(real(i) * MATH_PI_OVER_2 / real(ANGLE_INDICES - 1)));
     end generate;
 
-    cosine <= rom(angle_index);
+    cosine <= rom(to_integer(unsigned(angle_index)));
 end architecture arch;
