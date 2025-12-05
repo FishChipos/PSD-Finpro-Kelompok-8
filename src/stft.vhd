@@ -6,7 +6,7 @@ use ieee.math_real.all;
 use work.types.all;
 use work.fixed_point.all;
 use work.angle.all;
-use work.frequencies.all;
+use work.frequency.all;
 
 -- This will perform a Short-Time Fourier Transform (STFT) on input samples to produce an array of amplitudes corresponding to frequencies.
 entity stft is
@@ -14,7 +14,7 @@ entity stft is
         clock : in std_logic;
 
         samples : in samples_t;
-        frequencies : out frequency_amplitudes_t;
+        frequency_amplitudes : out frequency_amplitudes_t;
         start : in std_logic;
         done : out std_logic;
 
@@ -59,7 +59,7 @@ begin
                         frequency_index := frequency_index + 1;
                         term := 0;
 
-                        frequencies(frequency_index) <= amplitude;
+                        frequency_amplitudes(frequency_index) <= amplitude;
                         amplitude := 0.0;
                     end if;
 

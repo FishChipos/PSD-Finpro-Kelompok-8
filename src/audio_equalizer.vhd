@@ -4,6 +4,7 @@ use ieee.std_logic_1164.all;
 use work.types.all;
 use work.angle.all;
 use work.fixed_point.all;
+use work.frequency.all;
 
 entity audio_equalizer is
     port (
@@ -26,6 +27,9 @@ architecture arch of audio_equalizer is
 
     signal angle_index : angle_index_t;
     signal cosine : fixed_point_t;
+
+    signal start, done : std_logic;
+    signal frequency_amplitudes : frequency_amplitudes_t;
 begin
     -- Might replace this with a dedicated clock generator entity later.
     generate_clock : process is
@@ -36,20 +40,20 @@ begin
         wait for CLOCK_PERIOD / 2;
     end process generate_clock;
 
-    analog_to_digital_converter : entity analog_to_digital_converter(arch)
+    analog_to_digital_converter : entity work.analog_to_digital_converter(arch)
         port map (
             raw => input,
             quantized => quantized_input
         );
 
-    sampler : entity sampler(arch)
+    sampler : entity work.sampler(arch)
         port map (
             clock => clock,
             quantized => quantized_input,
             sample => sample
         );
     
-    sample_buffer : entity sample_buffer(arch)
+    sample_buffer : entity work.sample_buffer(arch)
         port map (
             clock => clock,
             hold => '0',
@@ -57,8 +61,19 @@ begin
             samples => samples
         );
 
-    cos_lookup_table : entity cos_lookup_table(arch)
+    cos_lookup_table : entity work.cos_lookup_table(arch)
         port map (
+            angle_index => angle_index,
+            cosine => cosine
+        );
+
+    stft : entity work.stft(arch)
+        port map (
+            clock => clock,
+            samples => samples,
+            frequency_amplitudes => frequency_amplitudes,
+            start => start,
+            done => done,
             angle_index => angle_index,
             cosine => cosine
         );
