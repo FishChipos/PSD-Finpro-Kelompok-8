@@ -15,13 +15,14 @@ entity sample_buffer is
 end entity sample_buffer;
 
 architecture arch of sample_buffer is
-    procedure shift is
-    begin
-        samples(1 to SAMPLE_BUFFER_SIZE - 1) <= samples(0 to SAMPLE_BUFFER_SIZE - 2);
-        samples(0) <= sample;
-    end procedure shift;
+    signal buf : samples_t;
 begin
     process (clock) is
+        procedure shift is
+        begin
+            buf(1 to SAMPLE_BUFFER_SIZE - 1) <= buf(0 to SAMPLE_BUFFER_SIZE - 2);
+            buf(0) <= sample;
+        end procedure shift;
     begin
         if (rising_edge(clock)) then
             if (hold = '0') then
@@ -29,4 +30,6 @@ begin
             end if;
         end if;
     end process;
+
+    samples <= buf;
 end architecture arch;

@@ -47,7 +47,7 @@ begin
                     end if;
 
                 when STFT_CALCULATING =>
-                    frequency := to_fixed_point(FREQUENCIES(frequency_index));
+                    frequency := FREQUENCIES(frequency_index);
                 
                     raw_angle := FP_2_PI * frequency * to_fixed_point(term) / to_fixed_point(SAMPLE_BUFFER_SIZE);
                     angle_index <= to_angle_index_cos(raw_angle);
@@ -60,7 +60,7 @@ begin
                         term := 0;
 
                         frequency_amplitudes(frequency_index) <= amplitude;
-                        amplitude := 0.0;
+                        amplitude := to_fixed_point(0.0);
                     end if;
 
                     if (frequency_index = FREQUENCY_COUNT) then
