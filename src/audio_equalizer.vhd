@@ -29,6 +29,29 @@ architecture arch of audio_equalizer is
 
     signal start, done : std_logic;
     signal frequency_amplitudes : frequency_amplitudes_t;
+
+    signal eq_freq_amp : frequency_amplitudes_t;
+    signal gain : frequency_amplitudes_t :=
+    (
+        -- default value, unchanged
+        others =>to_fixed_point(1.0),
+    );
+
+    signal gain_enable : std_logic := '1';
+    signal gain_index : natural := 0;
+
+    -- proc to change the gain in each freq
+    PROCEDure set_gain(
+        signal gain_array : inout frequency_amplitudes_t;
+        constant index: in natural;
+        constant val : in fixed_point_t;
+    ) is
+    begin
+        gain_array(index) <= val;
+    end PROCEDure;
+    -- usage : set_gain(gain, 10, to_fixed_point(0.7))
+    -- might change it to its own gain controller block if needed
+
 begin
     -- Might replace this with a dedicated clock generator entity later.
     generate_clock : process is
@@ -75,5 +98,14 @@ begin
             done => done,
             angle_index => angle_index,
             cosine => cosine
+        );
+
+    gain_block : entity work.stft_gain(rtl)
+        PORT MAP (
+        en => clock, 
+        clk => gain_enable;
+        freq_amp  => STD_LOGIC_VECTOR(frequency_amplitudes(gain_index)),
+        gain_val => STD_LOGIC_VECTOR(gain(gain_index)),
+        eq_amp => eq_freq_amp(gain_index)
         );
 end architecture arch;
