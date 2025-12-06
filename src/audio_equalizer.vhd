@@ -117,4 +117,16 @@ begin
             eq_amp => eq_freq_amp(i)
             );
     end generate;
+
+    istft : entity work.istft(rtl)
+        port map(
+        clk => clock, 
+        en => start,
+        freq_amp => frequency_amplitudes,
+        r_sample => samples,
+        done => done,
+        
+        angle_index => angle_index,
+        cosine => cosine
+        );
 end architecture arch;
