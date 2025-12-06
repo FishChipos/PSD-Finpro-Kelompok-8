@@ -8,7 +8,8 @@ use work.frequency.all;
 
 entity audio_equalizer is
     port (
-        input : in audio_voltage_t
+        audio_input : in audio_voltage_t;
+        audio_output : out audio_voltage_t
     );
 end entity audio_equalizer;
 
@@ -23,11 +24,15 @@ architecture arch of audio_equalizer is
     signal sample : word;
 
     signal samples : samples_t;
+    signal digital_out : word;
+    signal istft_sample_out : word;
+    signal istft_sample_valid: std_logic;
 
     signal angle_index : angle_index_t;
     signal cosine : fixed_point_t;
 
-    signal start, done : std_logic;
+    signal start_stft, done_stft : std_logic;
+    signal start_istft, done_istft: std_logic;
     signal frequency_amplitudes : frequency_amplitudes_t;
 
     signal eq_freq_amp : frequency_amplitudes_t;
@@ -61,11 +66,11 @@ begin
         wait for CLOCK_PERIOD / 2;
     end process generate_clock;
 
-    -- adc : entity work.adc(arch)
-    --     port map (
-    --         raw => input,
-    --         quantized => quantized_input
-    --     );
+    adc : entity work.adc(arch)
+        port map (
+            raw => audio_input,
+            quantized => quantized_input
+        );
 
     sampler : entity work.sampler(arch)
         port map (
@@ -93,13 +98,13 @@ begin
             clock => clock,
             samples => samples,
             frequency_amplitudes => frequency_amplitudes,
-            start => start,
-            done => done,
+            start => start_stft,
+            done => done_stft,
             angle_index => angle_index,
             cosine => cosine
         );
 
-    
+
     -- to loop gain for each freq
     generate_gain: for i in 0 to FREQUENCY_COUNT-1 generate
         signal freq_amp_vec : std_logic_vector(15 downto 0);
@@ -121,12 +126,48 @@ begin
     istft : entity work.istft(rtl)
         port map(
         clk => clock, 
-        en => start,
-        freq_amp => frequency_amplitudes,
-        r_sample => samples,
-        done => done,
+        en => start_istft,
+        freq_amp => eq_freq_amp,
+        sample_out => istft_sample_out,
+        sample_valid => istft_sample_valid,
+        done => done_istft,
         
         angle_index => angle_index,
         cosine => cosine
         );
+
+    dac : entity work.dac(arch)
+        port map(
+            digital_in => istft_sample_out,
+            analog_out => audio_output
+        );
+
+
+    process(clock)
+    begin
+        if rising_edge(clock) then
+            case state is
+                
+                when EQ_SAMPLING =>
+                    start_istft <= '0';
+                    start_stft <= '0';
+                    state <= EQ_STFT;
+                when EQ_STFT =>
+                    start_stft <= '1';
+                    if done_stft = '1' then
+                        start_stft <= '0';
+                        state <= EQ_INVERSE_STFT;
+                    end if;
+                when EQ_MIXING =>
+                    set_gain(gain, 10, to_fixed_point(0.7));
+                    state <= EQ_INVERSE_STFT;
+                when EQ_INVERSE_STFT =>
+                    start_istft <= '1';
+                    if done_istft = '1' then
+                        digital_out <= samples(0);
+                        state <= EQ_SAMPLING;
+                    end if;
+            end case;
+        end if;
+    end process;
 end architecture arch;

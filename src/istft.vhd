@@ -13,7 +13,9 @@ entity istft is
         clk, en : in std_logic;
         
         freq_amp : in frequency_amplitudes_t;
-        r_sample : out samples_t;
+        -- r_sample : out samples_t;
+        sample_out : out word;
+        sample_valid: out std_logic;
         done : out std_logic;
         
         angle_index : out angle_index_t;
@@ -54,8 +56,9 @@ begin
 
                     if (frequency_index = FREQUENCY_COUNT) then
                         -- might just add new helper function in fixed point packageg
-                        r_sample(sample_index) <= word(to_signed(to_integer(signed(sample_sum)) / (2 ** FRACTIONAL_LENGTH), word'length));
+                        sample_out <= word(to_signed(to_integer(signed(sample_sum)) / (2 ** FRACTIONAL_LENGTH), word'length));
 
+                        sample_valid <= '1';
                         sample_index := sample_index + 1;
                         frequency_index := 0;
                         sample_sum := to_fixed_point(0.0);
