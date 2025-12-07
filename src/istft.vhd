@@ -14,8 +14,8 @@ entity istft is
         
         freq_amp : in frequency_amplitudes_t;
         -- r_sample : out samples_t;
-        sample_out : out word;
-        sample_valid: out std_logic;
+        sample_out : out samples_t;
+        sample_ready : out std_logic;
         done : out std_logic;
         
         angle_index : out angle_index_t;
@@ -32,12 +32,10 @@ begin
         variable frequency_index : natural := 0;
         variable sample_index : natural := 0;
         variable sample_sum : fixed_point_t := to_fixed_point(0.0);
-
     begin
         if rising_edge(clk) then
             case state is
                 when ISTFT_IDLE =>
-                    done <= '0';
                     if en = '1' then
                         frequency_index := 0;
                         sample_index := 0;
@@ -45,31 +43,32 @@ begin
                         state <= ISTFT_CALCULATING;
                     end if;
                 when ISTFT_CALCULATING =>
+                    sample_ready <= '0';
                     frequency := FREQUENCIES(frequency_index);
                 
                     raw_angle := FP_2_PI * frequency * to_fixed_point(sample_index) / to_fixed_point(SAMPLE_BUFFER_SIZE);
                     angle_index <= to_angle_index_cos(raw_angle);
 
-                    sample_sum := sample_sum + freq_amp(frequency_index) * adjust_sign_cos(cosine, get_quadrant(raw_angle));
+                    sample_sum := sample_sum + freq_amp(frequency_index) * adjust_sign_cos(cosine, get_quadrant(raw_angle)) / to_fixed_point(FREQUENCY_COUNT);
 
                     frequency_index := frequency_index + 1;
 
                     if (frequency_index = FREQUENCY_COUNT) then
-                        -- might just add new helper function in fixed point packageg
-                        sample_out <= word(to_signed(to_integer(signed(sample_sum)) / (2 ** FRACTIONAL_LENGTH), word'length));
+                        sample_out(sample_index) <= sample_sum;
+                        sample_ready <= '1';
 
-                        sample_valid <= '1';
                         sample_index := sample_index + 1;
                         frequency_index := 0;
                         sample_sum := to_fixed_point(0.0);
                     end if;
 
                     if (sample_index = SAMPLE_BUFFER_SIZE) then
+                        done <= '1';
                         state <= ISTFT_DONE;
                     end if;
 
                 when ISTFT_DONE =>
-                    done <= '1';
+                    done <= '0';
                     state <= ISTFT_IDLE;
             end case;
 

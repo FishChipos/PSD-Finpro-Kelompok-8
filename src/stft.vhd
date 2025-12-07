@@ -37,8 +37,6 @@ begin
         if (rising_edge(clock)) then
             case (state) is
                 when STFT_IDLE =>
-                    done <= '0';
-
                     if (start = '1') then
                         frequency_index := 0;
                         term := 0;
@@ -64,11 +62,12 @@ begin
                     end if;
 
                     if (frequency_index = FREQUENCY_COUNT) then
+                        done <= '1';
                         state <= STFT_DONE;
                     end if;
 
                 when STFT_DONE =>
-                    done <= '1';
+                    done <= '0';
                     state <= STFT_IDLE;
             end case;
         end if;

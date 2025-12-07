@@ -15,5 +15,5 @@ end entity adc;
 
 architecture arch of adc is
 begin
-    quantized <= word(to_signed(map_voltage(raw, 0, 2 ** WORD_LENGTH - 1), word'length));
+    quantized <= word(to_signed(integer(map_from_voltage(raw, 0.0, 2.0 ** WORD_LENGTH - 1.0)), word'length));
 end architecture arch;
