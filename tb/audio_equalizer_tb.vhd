@@ -9,40 +9,45 @@ use work.types.all;
 entity audio_equalizer_tb is
 end audio_equalizer_tb;
 
-
 architecture rtl of audio_equalizer_tb is
     signal analog_in  : audio_voltage_t;
     signal analog_out : audio_voltage_t;
-
+    signal start, ready : std_logic;
 begin
     audio_equalizer_inst: entity work.audio_equalizer(arch)
         port map (
             audio_input  => analog_in,
-            audio_output => analog_out
+            audio_output => analog_out,
+            start => start,
+            ready => ready
         );
 
         test: process
-            file input_file : text open read_mode is "input_samples.txt";
-            file output_file : text open write_mode is "output_samples.txt";
+            file input_file : text open READ_MODE is "input_samples.txt";
+            file output_file : text open WRITE_MODE is "output_samples.txt";
             variable input_line: line;
             variable output_line : line;
-            variable sample_int : integer;
-            variable sample_real : real;
+            variable sample : real;
         begin
-            wait for 50 ns;
             while not endfile(input_file) loop
                 readline(input_file, input_line);
-                read(input_line, sample_int);
+                read(input_line, sample);
 
-                sample_real := real(sample_int);
-                analog_in <= sample_real  * 5.0;
+                analog_in <= sample  * 5.0;
+                start <= '1';
 
-                wait for 20 ns;  
+                wait for 10 ns;
+
+                start <= '0';
+
+                wait until ready = '1';
 
                 write(output_line, analog_out);
                 writeline(output_file, output_line);
-                wait for 20 ns;  
+                wait for 10 ns;  
             end loop;
+            file_close(input_file);
+            file_close(output_file);
         wait;
         end process;    
 end architecture rtl;

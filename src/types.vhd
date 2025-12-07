@@ -6,7 +6,8 @@ use ieee.math_real.all;
 package types is
     subtype audio_voltage_t is real range 0.0 to 5.0;
 
-    function map_voltage(voltage : audio_voltage_t; low : integer; high : integer) return integer;
+    function map_from_voltage(voltage : audio_voltage_t; low : real; high : real) return real;
+    function map_to_voltage(val : real; low : real; high : real) return audio_voltage_t;
 
     constant WORD_LENGTH : natural := 16;
     subtype word is std_logic_vector(WORD_LENGTH - 1 downto 0);
@@ -16,8 +17,13 @@ package types is
 end package types;
 
 package body types is 
-    function map_voltage(voltage : audio_voltage_t; low : integer; high : integer) return integer is
+    function map_from_voltage(voltage : audio_voltage_t; low : real; high : real) return real is
     begin
-        return integer((voltage - audio_voltage_t'low) / (audio_voltage_t'high - audio_voltage_t'low) * real(high - low) + real(low));        
-    end function map_voltage;
+        return (voltage - audio_voltage_t'low) / (audio_voltage_t'high - audio_voltage_t'low) * (high - low) + low;        
+    end function map_from_voltage;
+
+    function map_to_voltage(val : real; low : real; high : real) return audio_voltage_t is
+    begin
+        return audio_voltage_t((val - low) / (high - low) * (audio_voltage_t'high - audio_voltage_t'low) + audio_voltage_t'low);
+    end function;
 end package body types;

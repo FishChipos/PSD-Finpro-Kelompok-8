@@ -5,7 +5,7 @@ use ieee.numeric_std.all;
 use work.types.all;
 
 package fixed_point is
-    constant FRACTIONAL_LENGTH : natural := 5;  
+    constant FRACTIONAL_LENGTH : natural := 7;  
 
     subtype fixed_point_t is word;
 
