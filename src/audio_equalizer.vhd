@@ -58,13 +58,17 @@ architecture arch of audio_equalizer is
 
 begin
     -- Might replace this with a dedicated clock generator entity later.
-    generate_clock : process is
-    begin
-        clock <= '0';
-        wait for CLOCK_PERIOD / 2;
-        clock <= '1';
-        wait for CLOCK_PERIOD / 2;
-    end process generate_clock;
+    -- generate_clock : process is
+    -- begin
+    --     clock <= '0';
+    --     wait for CLOCK_PERIOD / 2;
+    --     clock <= '1';
+    --     wait for CLOCK_PERIOD / 2;
+    -- end process generate_clock;
+    clock_gen: entity work.clock_generator(rtl)
+        port map (
+            clock => clock
+        );
 
     adc : entity work.adc(arch)
         port map (
