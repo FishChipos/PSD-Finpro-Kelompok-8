@@ -11,7 +11,7 @@ end audio_equalizer_tb;
 
 
 architecture rtl of audio_equalizer_tb is
-    signal analog_in  : audio_voltage_t := 0.0;
+    signal analog_in  : audio_voltage_t;
     signal analog_out : audio_voltage_t;
 
 begin

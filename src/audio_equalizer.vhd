@@ -43,6 +43,8 @@ architecture arch of audio_equalizer is
     );
 
     signal gain_enable : std_logic := '1';
+    signal sample_count : natural := 0;
+    signal buffer_full  : std_logic := '0';
 
     -- proc to change the gain in each freq
     PROCEDure set_gain(
@@ -145,7 +147,16 @@ begin
             digital_in => istft_sample_out,
             analog_out => audio_output
         );
-
+    sample_counter_proc : process(clock)
+begin
+    if rising_edge(clock) then
+        if sample_count < SAMPLE_BUFFER_SIZE then
+            sample_count <= sample_count + 1;
+        else
+            buffer_full <= '1';
+        end if;
+    end if;
+end process;
 
     process(clock)
     begin
@@ -154,8 +165,12 @@ begin
                 
                 when EQ_SAMPLING =>
                     start_istft <= '0';
-                    start_stft <= '0';
-                    state <= EQ_STFT;
+                    if buffer_full = '1' then
+                        start_stft <= '1';
+                        state <= EQ_STFT;
+                    else
+                        start_stft <= '0';
+                    end if;
                 when EQ_STFT =>
                     start_stft <= '1';
                     if done_stft = '1' then
