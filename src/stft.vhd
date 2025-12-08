@@ -28,7 +28,7 @@ entity stft is
 end entity stft;
 
 architecture arch of stft is
-    type stft_state_t is (STFT_IDLE, STFT_COS_LOOKUP, STFT_CALCULATING, STFT_DONE);
+    type stft_state_t is (STFT_IDLE, STFT_TRIG_LOOKUP, STFT_CALCULATING, STFT_DONE);
     signal state : stft_state_t := STFT_IDLE;
 begin
     calculate : process (clock) is
@@ -46,36 +46,38 @@ begin
                         frequency_index := 0;
                         sample_index := 0;
                         datum := to_complex(0.0, 0.0);
-                        state <= STFT_COS_LOOKUP;
+                        state <= STFT_TRIG_LOOKUP;
                     end if;
 
-                when STFT_COS_LOOKUP =>
+                when STFT_TRIG_LOOKUP =>
                     frequency := FREQUENCIES(frequency_index);
 
-                    angle := FP_2_PI * frequency * to_fixed_point(sample_index + 1) / to_fixed_point(SAMPLE_BUFFER_SIZE);
+                    angle := FP_2_PI * frequency;
+                    angle := angle * (to_fixed_point(sample_index) / to_fixed_point(SAMPLE_BUFFER_SIZE));
                     cos_angle <= angle;
                     sin_angle <= angle;
                     state <= STFT_CALCULATING;
 
                 when STFT_CALCULATING =>
+
                     datum := datum + to_complex(samples(sample_index) * cosine, samples(sample_index) * sine * to_fixed_point(-1.0));
+
+                    state <= STFT_TRIG_LOOKUP;
 
                     sample_index := sample_index + 1;
 
-                    state <= STFT_COS_LOOKUP;
-
-                    if (sample_index = SAMPLE_BUFFER_SIZE) then
+                    if (sample_index >= SAMPLE_BUFFER_SIZE) then
                         frequency_datum <= datum;
                         frequency_data(frequency_index) <= datum;
 
                         frequency_index := frequency_index + 1;
                         sample_index := 0;
                         datum := to_complex(0.0, 0.0);
-                    end if;
 
-                    if (frequency_index = FREQUENCY_COUNT) then
-                        done <= '1';
-                        state <= STFT_DONE;
+                        if (frequency_index >= FREQUENCY_COUNT) then
+                            done <= '1';
+                            state <= STFT_DONE;
+                        end if;    
                     end if;
 
                 when STFT_DONE =>

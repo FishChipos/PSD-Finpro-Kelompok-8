@@ -21,8 +21,7 @@ architecture arch of sample_buffer is
 begin
     process (clock) is
         variable sample_count : natural := 0;
-
-
+        
         procedure fill is
         begin
             buf(LOWER_INDEX + sample_count) <= sample;

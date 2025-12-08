@@ -17,7 +17,7 @@ entity istft is
         
         sample : out fixed_point_t := to_fixed_point(0.0);
         samples : out samples_t := (others => to_fixed_point(0.0));
-        ready, done : out std_logic := '0';
+        done : out std_logic := '0';
         
         cos_angle : out fixed_point_t := to_fixed_point(0.0);
         cosine : in fixed_point_t := to_fixed_point(0.0);
@@ -27,13 +27,13 @@ entity istft is
 end entity istft;
 
 architecture rtl of istft is
-    type istft_state_t is (ISTFT_IDLE, ISTFT_COS_LOOKUP, ISTFT_CALCULATING, ISTFT_DONE);
+    type istft_state_t is (ISTFT_IDLE, ISTFT_TRIG_LOOKUP, ISTFT_CALCULATING, ISTFT_DONE);
     signal state : istft_state_t := ISTFT_IDLE;
 begin
     calculate : process(clk) is
         variable frequency, angle : fixed_point_t := to_fixed_point(0.0);
         variable frequency_index : natural := 0;
-        variable sample_index : natural := LOWER_INDEX;
+        variable sample_index : natural := 0;
         variable sample_sum : complex_t := to_complex(0.0, 0.0);
     begin
         if rising_edge(clk) then
@@ -41,16 +41,16 @@ begin
                 when ISTFT_IDLE =>
                     if en = '1' then
                         frequency_index := 0;
-                        sample_index := LOWER_INDEX;
+                        sample_index := 0;
                         sample_sum := to_complex(0.0, 0.0);
-                        state <= ISTFT_COS_LOOKUP;
+                        state <= ISTFT_TRIG_LOOKUP;
                     end if;
 
-                when ISTFT_COS_LOOKUP =>
-                    ready <= '0';
+                when ISTFT_TRIG_LOOKUP =>
                     frequency := FREQUENCIES(frequency_index);
                 
-                    angle := FP_2_PI * frequency * to_fixed_point(sample_index + 1) / to_fixed_point(SAMPLE_BUFFER_SIZE);
+                    angle := FP_2_PI * frequency;
+                    angle := angle * (to_fixed_point(sample_index) / to_fixed_point(SAMPLE_BUFFER_SIZE));
                     cos_angle <= angle;
                     sin_angle <= angle;
 
@@ -59,29 +59,25 @@ begin
                 when ISTFT_CALCULATING =>
                     sample_sum := sample_sum + frequency_data(frequency_index) * to_complex(cosine, sine) / to_fixed_point(SAMPLE_BUFFER_SIZE);
 
+                    state <= ISTFT_TRIG_LOOKUP;
+
                     frequency_index := frequency_index + 1;
 
-                    state <= ISTFT_COS_LOOKUP;
-
-                    if (frequency_index = FREQUENCY_COUNT) then
+                    if (frequency_index >= FREQUENCY_COUNT) then
                         sample <= sample_sum.re;
                         samples(sample_index) <= sample_sum.re;
-                        ready <= '1';
 
                         sample_index := sample_index + 1;
                         frequency_index := 0;
                         sample_sum := to_complex(0.0, 0.0);
-                    end if;
 
-                    if (sample_index = UPPER_INDEX) then
-                        done <= '1';
-                        ready <= '1';
-                        state <= ISTFT_DONE;
+                        if (sample_index >= SAMPLE_BUFFER_SIZE) then
+                            done <= '1';
+                            state <= ISTFT_DONE;
+                        end if;
                     end if;
-
                 when ISTFT_DONE =>
                     done <= '0';
-                    ready <= '0';
                     state <= ISTFT_IDLE;
             end case;
 

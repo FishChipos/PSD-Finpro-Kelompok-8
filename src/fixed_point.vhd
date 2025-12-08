@@ -5,7 +5,8 @@ use ieee.numeric_std.all;
 use work.types.all;
 
 package fixed_point is
-    constant FRACTIONAL_LENGTH : natural := 8;  
+    -- Don't go too crazy or else it will go above the integer limit.
+    constant FRACTIONAL_LENGTH : natural := 10;  
 
     subtype fixed_point_t is word;
 
@@ -27,12 +28,12 @@ end package fixed_point;
 package body fixed_point is
     function to_fixed_point(r : real) return fixed_point_t is
     begin
-        return fixed_point_t(to_signed(integer(r * (2.0 ** FRACTIONAL_LENGTH)), fixed_point_t'length));
+        return fixed_point_t(to_signed(integer(r * (2 ** FRACTIONAL_LENGTH), fixed_point_t'length)));
     end function to_fixed_point;
 
     function to_fixed_point(i : integer) return fixed_point_t is
     begin
-        return fixed_point_t(to_signed(i * (2 ** FRACTIONAL_LENGTH), fixed_point_t'length));
+        return fixed_point_t(resize(to_signed((i), fixed_point_t'length) * to_signed(2 ** FRACTIONAL_LENGTH, fixed_point_t'length), fixed_point_t'length));
     end function to_fixed_point;
 
     function from_fixed_point_r(fp : fixed_point_t) return real is
@@ -46,66 +47,66 @@ package body fixed_point is
     end function;
 
     function "+"(left, right : fixed_point_t) return fixed_point_t is
-        variable left_integer, right_integer, result : integer;
+        variable left_signed, right_signed, result : signed(fixed_point_t'length - 1 downto 0);
     begin
-        left_integer := to_integer(signed(left));
-        right_integer := to_integer(signed(right));
+        left_signed := signed(left);
+        right_signed := signed(right);
 
-        result := left_integer + right_integer;
+        result := left_signed + right_signed;
 
-        return fixed_point_t(to_signed(result, fixed_point_t'length));
+        return fixed_point_t(result);
     end function "+";
 
     function "-"(left, right : fixed_point_t) return fixed_point_t is
-        variable left_integer, right_integer, result : integer;
+        variable left_signed, right_signed, result : signed(fixed_point_t'length - 1 downto 0);
     begin
-        left_integer := to_integer(signed(left));
-        right_integer := to_integer(signed(right));
+        left_signed := signed(left);
+        right_signed := signed(right);
 
-        result := left_integer - right_integer;
+        result := left_signed - right_signed;
 
-        return fixed_point_t(to_signed(result, fixed_point_t'length));
+        return fixed_point_t(result);
     end function "-";
 
     function "*"(left, right : fixed_point_t) return fixed_point_t is
-        variable left_integer, right_integer, result : integer;
+        variable left_signed, right_signed, result : signed(fixed_point_t'length - 1 downto 0);
     begin
-        left_integer := to_integer(signed(left));
-        right_integer := to_integer(signed(right));
+        left_signed := signed(left);
+        right_signed := signed(right);
 
-        result := left_integer * right_integer / (2 ** FRACTIONAL_LENGTH);
+        result := resize(left_signed * right_signed / to_signed(2 ** FRACTIONAL_LENGTH, fixed_point_t'length), fixed_point_t'length);
 
-        return fixed_point_t(to_signed(result, fixed_point_t'length));
+        return fixed_point_t(result);
     end function "*";
 
     function "/"(left, right : fixed_point_t) return fixed_point_t is
-        variable left_integer, right_integer, result : integer;
+        variable left_signed, right_signed, result : signed(fixed_point_t'length - 1 downto 0);
     begin
-        left_integer := to_integer(signed(left));
-        right_integer := to_integer(signed(right));
+        left_signed := signed(left);
+        right_signed := signed(right);
 
-        result := left_integer * (2 ** FRACTIONAL_LENGTH) / right_integer;
+        result := resize(left_signed * to_signed(2 ** FRACTIONAL_LENGTH, fixed_point_t'length) / right_signed, fixed_point_t'length);
 
-        return fixed_point_t(to_signed(result, fixed_point_t'length));
+        return fixed_point_t(result);
     end function "/";
 
     function "mod"(left, right : fixed_point_t) return fixed_point_t is
-        variable left_integer, right_integer, result : integer;
+        variable left_signed, right_signed, result : signed(fixed_point_t'length - 1 downto 0);
     begin
-        left_integer := to_integer(signed(left));
-        right_integer := to_integer(signed(right));
+        left_signed := signed(left);
+        right_signed := signed(right);
 
-        result := left_integer mod right_integer;
+        result := left_signed mod right_signed;
 
-        return fixed_point_t(to_signed(result, fixed_point_t'length));
+        return fixed_point_t(result);
     end function "mod";
 
     function "<"(left, right : fixed_point_t) return boolean is
-        variable left_integer, right_integer : integer;
+        variable left_signed, right_signed : signed(fixed_point_t'length - 1 downto 0);
     begin
-        left_integer := to_integer(signed(left));
-        right_integer := to_integer(signed(right));
+        left_signed := signed(left);
+        right_signed := signed(right);
 
-        return left_integer < right_integer;
+        return left_signed < right_signed;
     end function "<";
 end package body fixed_point;

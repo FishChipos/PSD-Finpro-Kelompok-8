@@ -9,6 +9,7 @@ use work.complex.all;
 package frequency is
     type frequencies_t is array(natural range <>) of fixed_point_t;
     constant FREQUENCY_COUNT : natural := 128;
+    constant FREQUENCY_STEP : natural := 1;
 
     impure function fill_frequencies return frequencies_t;
     constant FREQUENCIES : frequencies_t := fill_frequencies;
@@ -18,10 +19,12 @@ end package frequency;
 
 package body frequency is
     impure function fill_frequencies return frequencies_t is
+        variable freq : natural := 0;
         variable freqs : frequencies_t(0 to FREQUENCY_COUNT - 1);
     begin
-        for freq in 1 to FREQUENCY_COUNT loop
-            freqs(freq - 1) := to_fixed_point(freq);
+        for freq_count in 0 to FREQUENCY_COUNT - 1 loop
+            freqs(freq_count) := to_fixed_point(freq);
+            freq := freq + FREQUENCY_STEP;
         end loop;
 
         return freqs;

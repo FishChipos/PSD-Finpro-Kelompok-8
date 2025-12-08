@@ -54,7 +54,7 @@ architecture arch of audio_equalizer is
     signal gain_enable : std_logic := '1';
 
     signal istft_start : std_logic := '0'; 
-    signal istft_done, istft_sample_ready : std_logic;
+    signal istft_done : std_logic;
     signal istft_sample : fixed_point_t;
     signal istft_samples : samples_t;
 begin
@@ -137,9 +137,7 @@ begin
             frequency_data => gain_frequency_data,
             sample => istft_sample,
             samples => istft_samples,
-            ready => output_ready,
             done => istft_done,
-            
             cos_angle => cos_angle_istft,
             sin_angle => sin_angle_istft,
             cosine => cosine,
