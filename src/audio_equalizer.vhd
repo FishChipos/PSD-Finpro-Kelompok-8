@@ -4,14 +4,15 @@ use ieee.std_logic_1164.all;
 use work.types.all;
 use work.angle.all;
 use work.fixed_point.all;
+use work.complex.all;
 use work.frequency.all;
 
 entity audio_equalizer is
     port (
         audio_input : in audio_voltage_t;
-        audio_output : out audio_voltage_t;
+        audio_output : out audio_voltage_buffer_t;
         start : in std_logic;
-        ready : out std_logic
+        sampling, done, output_ready : out std_logic
     );
 end entity audio_equalizer;
 
@@ -22,54 +23,41 @@ architecture arch of audio_equalizer is
     constant CLOCK_PERIOD : time := 10 ns;
     signal clock : std_logic;
 
-    signal quantized_input : word;
-    signal sample : word;
+    signal quantized_input : fixed_point_t;
+    signal sample : fixed_point_t;
 
     signal samples : samples_t;
     signal sample_buffer_enable : std_logic;
-    signal sample_buffer_full : std_logic;
+    signal sample_buffer_ready : std_logic;
 
-    signal angle_index_sel : std_logic;
-    signal angle_index_stft, angle_index_istft, angle_index : angle_index_t;
+    signal cos_angle_stft, cos_angle_istft : fixed_point_t;
+    signal cos_angle : fixed_point_t;
+    signal cos_angle_sel : std_logic := '0';
     signal cosine : fixed_point_t;
 
+    signal sin_angle_stft, sin_angle_istft : fixed_point_t;
+    signal sin_angle : fixed_point_t;
+    signal sin_angle_sel : std_logic := '0';
+    signal sine : fixed_point_t;
+
     signal stft_start, stft_done : std_logic;
-    signal stft_frequency_amplitudes : frequency_amplitudes_t;
+    signal stft_frequency_datum : complex_t;
+    signal stft_frequency_data : frequency_data_t;
 
-    signal gain_frequency_amplitudes : frequency_amplitudes_t;
+    signal gain_frequency_data : frequency_data_t;
 
-    signal gain : frequency_amplitudes_t :=
+    signal gain : frequency_data_t :=
     (
-        -- default value, unchanged
-        others => to_fixed_point(1.0)
+        others => to_complex(1.0, 1.0)
     );
 
     signal gain_enable : std_logic := '1';
 
-    signal istft_start, istft_done, istft_sample_ready : std_logic;
-    signal istft_sample_out : samples_t;
-
-    -- proc to change the gain in each freq
-    procedure set_gain(
-        signal gain_array : inout frequency_amplitudes_t;
-        constant index: in natural;
-        constant val : in fixed_point_t
-    ) is
-    begin
-        gain_array(index) <= val;
-    end procedure;
-    -- usage : set_gain(gain, 10, to_fixed_point(0.7))
-    -- might change it to its own gain controller block if needed
-
+    signal istft_start : std_logic := '0'; 
+    signal istft_done, istft_sample_ready : std_logic;
+    signal istft_sample : fixed_point_t;
+    signal istft_samples : samples_t;
 begin
-    -- Might replace this with a dedicated clock generator entity later.
-    -- generate_clock : process is
-    -- begin
-    --     clock <= '0';
-    --     wait for CLOCK_PERIOD / 2;
-    --     clock <= '1';
-    --     wait for CLOCK_PERIOD / 2;
-    -- end process generate_clock;
     clock_gen: entity work.clock_generator(rtl)
         port map (
             clock => clock
@@ -92,26 +80,40 @@ begin
         port map (
             clock => clock,
             enable => sample_buffer_enable,
-            full => sample_buffer_full,
+            ready => sample_buffer_ready,
             sample => sample,
             samples => samples
         );
 
+    cos_angle <= cos_angle_stft when cos_angle_sel = '0' else cos_angle_istft;
+    sin_angle <= sin_angle_stft when sin_angle_sel = '0' else sin_angle_istft;
+
     cos_lookup_table : entity work.cos_lookup_table(arch)
         port map (
-            angle_index => angle_index,
+            clock => clock,
+            angle => cos_angle,
             cosine => cosine
+        );
+
+    sin_lookup_table : entity work.sin_lookup_table(arch)
+        port map (
+            clock => clock,
+            angle => sin_angle,
+            sine => sine
         );
 
     stft : entity work.stft(arch)
         port map (
             clock => clock,
             samples => samples,
-            frequency_amplitudes => stft_frequency_amplitudes,
+            frequency_datum => stft_frequency_datum,
+            frequency_data => stft_frequency_data,
             start => stft_start,
             done => stft_done,
-            angle_index => angle_index_stft,
-            cosine => cosine
+            cos_angle => cos_angle_stft,
+            sin_angle => sin_angle_stft,
+            cosine => cosine,
+            sine => sine
         );
 
 
@@ -122,9 +124,9 @@ begin
             PORT MAP (
                 en => gain_enable, 
                 clk => clock,
-                freq_amp  => stft_frequency_amplitudes(i),
+                freq_amp  => stft_frequency_data(i),
                 gain_val => gain(i),
-                eq_amp => gain_frequency_amplitudes(i)
+                eq_amp => gain_frequency_data(i)
             );
     end generate;
 
@@ -132,22 +134,27 @@ begin
         port map(
             clk => clock, 
             en => istft_start,
-            freq_amp => gain_frequency_amplitudes,
-            sample_out => istft_sample_out,
-            sample_ready => istft_sample_ready,
+            frequency_data => gain_frequency_data,
+            sample => istft_sample,
+            samples => istft_samples,
+            ready => output_ready,
             done => istft_done,
             
-            angle_index => angle_index_istft,
-            cosine => cosine
+            cos_angle => cos_angle_istft,
+            sin_angle => sin_angle_istft,
+            cosine => cosine,
+            sine => sine
         );
 
-    dac : entity work.dac(arch)
-        port map(
-            digital_in => istft_sample_out(0),
-            analog_out => audio_output
-        );
-
-    angle_index <= angle_index_stft when angle_index_sel = '0' else angle_index_istft;
+    generate_dac : for i in 0 to UPPER_INDEX - LOWER_INDEX generate
+    begin
+        dac : entity work.dac(arch)
+            port map(
+                digital_in => istft_samples(LOWER_INDEX + i),
+                analog_out => audio_output(i)
+            );
+    end generate;
+    
 
     process(clock)
     begin
@@ -156,14 +163,17 @@ begin
                 when EQ_IDLE =>
                     if (start = '1') then
                         state <= EQ_SAMPLING;
-                        ready <= '0';
+                        done <= '0';
+                        sampling <= '1';
                         sample_buffer_enable <= '1';
                     end if;
                 when EQ_SAMPLING =>
-                    if (sample_buffer_full = '1') then
+                    if (sample_buffer_ready = '1') then
                         sample_buffer_enable <= '0';
-                        angle_index_sel <= '0';
+                        cos_angle_sel <= '0';
+                        sin_angle_sel <= '0';
                         stft_start <= '1';
+                        sampling <= '0';
                         state <= EQ_STFT;
                     end if;
                 when EQ_STFT =>
@@ -173,13 +183,14 @@ begin
                     end if;
                 when EQ_MIXING =>
                     state <= EQ_INVERSE_STFT;
-                    angle_index_sel <= '1';
+                    cos_angle_sel <= '1';
+                    sin_angle_sel <= '1';
                     istft_start <= '1';
                 when EQ_INVERSE_STFT =>
                     if istft_done = '1' then
                         istft_start <= '0';
                         state <= EQ_IDLE;
-                        ready <= '1';
+                        done <= '1';
                     end if;
             end case;
         end if;

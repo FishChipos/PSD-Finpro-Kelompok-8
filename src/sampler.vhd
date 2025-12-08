@@ -2,13 +2,14 @@ library ieee;
 use ieee.std_logic_1164.all;
 
 use work.types.all;
+use work.fixed_point.all;
 
 entity sampler is
     port (
-        clock : in std_logic;
+        clock : in std_logic := '0';
 
-        quantized : in word;
-        sample : out word
+        quantized : in fixed_point_t := to_fixed_point(0.0);
+        sample : out fixed_point_t := to_fixed_point(0.0)
     );
 end entity sampler;
 
