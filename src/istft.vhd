@@ -57,15 +57,15 @@ begin
                     state <= ISTFT_CALCULATING;
 
                 when ISTFT_CALCULATING =>
-                    sample_sum := sample_sum + frequency_data(frequency_index) * to_complex(cosine, sine) / to_fixed_point(SAMPLE_BUFFER_SIZE);
+                    sample_sum := sample_sum + (frequency_data(frequency_index) * to_complex(cosine, sine) / to_fixed_point(SAMPLE_BUFFER_SIZE));
 
                     state <= ISTFT_TRIG_LOOKUP;
 
                     frequency_index := frequency_index + 1;
 
                     if (frequency_index >= FREQUENCY_COUNT) then
-                        sample <= sample_sum.re;
-                        samples(sample_index) <= sample_sum.re;
+                        sample <= mag(sample_sum);
+                        samples(sample_index) <= mag(sample_sum);
 
                         sample_index := sample_index + 1;
                         frequency_index := 0;

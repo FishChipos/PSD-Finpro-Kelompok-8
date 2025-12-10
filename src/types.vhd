@@ -16,7 +16,7 @@ package types is
     function map_from_voltage(voltage : audio_voltage_t; low : real; high : real) return real;
     function map_to_voltage(val : real; low : real; high : real) return audio_voltage_t;
 
-    constant WORD_LENGTH : natural := 32;
+    constant WORD_LENGTH : natural := 64;
     subtype word is std_logic_vector(WORD_LENGTH - 1 downto 0);
 end package types;
 

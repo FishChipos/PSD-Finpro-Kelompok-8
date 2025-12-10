@@ -28,7 +28,7 @@ end package fixed_point;
 package body fixed_point is
     function to_fixed_point(r : real) return fixed_point_t is
     begin
-        return fixed_point_t(to_signed(integer(r * (2 ** FRACTIONAL_LENGTH), fixed_point_t'length)));
+        return fixed_point_t(to_signed(integer(r * (2 ** FRACTIONAL_LENGTH)), fixed_point_t'length));
     end function to_fixed_point;
 
     function to_fixed_point(i : integer) return fixed_point_t is
@@ -37,8 +37,19 @@ package body fixed_point is
     end function to_fixed_point;
 
     function from_fixed_point_r(fp : fixed_point_t) return real is
+        variable r : real := 0.0;
     begin
-        return real(to_integer(signed(fp))) / (2.0 ** FRACTIONAL_LENGTH);
+        for i in 0 to fixed_point_t'length - 2 loop
+            if (fp(i) = '1') then
+                r := r + (2.0 ** (i - FRACTIONAL_LENGTH));
+            end if;
+        end loop;
+
+        if (fp(fixed_point_t'length - 1) = '1') then
+            r := -r;
+        end if;
+
+        return r;
     end function from_fixed_point_r;
 
     function from_fixed_point_i(fp : fixed_point_t) return integer is
