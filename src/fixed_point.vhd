@@ -28,7 +28,7 @@ end package fixed_point;
 package body fixed_point is
     function to_fixed_point(r : real) return fixed_point_t is
     begin
-        return fixed_point_t(to_signed(integer(r * (2 ** FRACTIONAL_LENGTH)), fixed_point_t'length));
+        return fixed_point_t(to_signed(integer(r * (2.0 ** FRACTIONAL_LENGTH)), fixed_point_t'length));
     end function to_fixed_point;
 
     function to_fixed_point(i : integer) return fixed_point_t is
@@ -81,11 +81,16 @@ package body fixed_point is
 
     function "*"(left, right : fixed_point_t) return fixed_point_t is
         variable left_signed, right_signed, result : signed(fixed_point_t'length - 1 downto 0);
+        variable temp_product : signed(2 * fixed_point_t'length - 1 downto 0);
     begin
         left_signed := signed(left);
         right_signed := signed(right);
 
-        result := resize(left_signed * right_signed / to_signed(2 ** FRACTIONAL_LENGTH, fixed_point_t'length), fixed_point_t'length);
+        -- result := resize(left_signed * right_signed / to_signed(2 ** FRACTIONAL_LENGTH, fixed_point_t'length), fixed_point_t'length);
+
+        temp_product := left_signed * right_signed;
+        
+        result := temp_product(FRACTIONAL_LENGTH + fixed_point_t'length - 1 downto FRACTIONAL_LENGTH);
 
         return fixed_point_t(result);
     end function "*";
