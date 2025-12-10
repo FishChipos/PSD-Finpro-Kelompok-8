@@ -4,43 +4,28 @@ use ieee.math_real.all;
 
 use work.types.all;
 use work.fixed_point.all;
+use work.complex.all;
 
 package frequency is
     type frequencies_t is array(natural range <>) of fixed_point_t;
-    constant FREQUENCIES : frequencies_t := (
-        to_fixed_point(20.0),
-        to_fixed_point(25.0),
-        to_fixed_point(31.5),
-        to_fixed_point(40.0), 
-        to_fixed_point(50.0),
-        to_fixed_point(63.0),
-        to_fixed_point(80.0),
-        to_fixed_point(100.0),
-        to_fixed_point(125.0),
-        to_fixed_point(160.0),
-        to_fixed_point(200.0),
-        to_fixed_point(250.0),
-        to_fixed_point(315.0),
-        to_fixed_point(400.0),
-        to_fixed_point(500.0),
-        to_fixed_point(630.0),
-        to_fixed_point(800.0),
-        to_fixed_point(1_250.0),
-        to_fixed_point(1_600.0),
-        to_fixed_point(2_000.0),
-        to_fixed_point(2_500.0),
-        to_fixed_point(3_150.0),
-        to_fixed_point(4_000.0),
-        to_fixed_point(5_000.0),
-        to_fixed_point(6_300.0),
-        to_fixed_point(8_000.0),
-        to_fixed_point(10_000.0),
-        to_fixed_point(12_500.0),
-        to_fixed_point(16_000.0),
-        to_fixed_point(20_000.0)
-    );
+    constant FREQUENCY_COUNT : natural := 64;
+    constant FREQUENCY_STEP : natural := 1;
 
-    constant FREQUENCY_COUNT : natural := frequencies'right + 1;
+    impure function fill_frequencies return frequencies_t;
+    constant FREQUENCIES : frequencies_t := fill_frequencies;
 
-    type frequency_amplitudes_t is array(natural range 0 to FREQUENCY_COUNT - 1) of fixed_point_t;
+    type frequency_data_t is array(natural range 0 to FREQUENCY_COUNT - 1) of complex_t;
 end package frequency;
+
+package body frequency is
+    impure function fill_frequencies return frequencies_t is
+        variable freq : natural := 0;
+        variable freqs : frequencies_t(0 to FREQUENCY_COUNT - 1);
+    begin
+        for freq_count in 0 to FREQUENCY_COUNT - 1 loop
+            freqs(freq_count) := to_fixed_point(0.1) * to_fixed_point(freq_count);
+            freq := freq + FREQUENCY_STEP;
+        end loop;
+        return freqs;
+    end function fill_frequencies;
+end package body frequency;

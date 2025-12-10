@@ -7,15 +7,15 @@ use work.types.all;
 use work.angle.all;
 use work.fixed_point.all;
 
-entity cos_lookup_table is
+entity sin_lookup_table is
     port (
         clock : in std_logic := '0';
         angle : in fixed_point_t;
-        cosine : out fixed_point_t := (others => '0')
+        sine : out fixed_point_t := (others => '0')
     );
-end entity cos_lookup_table;
+end entity sin_lookup_table;
 
-architecture arch of cos_lookup_table is
+architecture arch of sin_lookup_table is
     -- Amount of values between 0 and 90.
     constant ANGLES_IN_90 : natural := 1024;
 
@@ -23,7 +23,7 @@ architecture arch of cos_lookup_table is
     signal rom : rom_t;
 begin
     generate_rom : for i in 0 to ANGLES_IN_90 generate
-        rom(i) <= to_fixed_point(cos(real(i) * MATH_PI_OVER_2 / real(ANGLES_IN_90)));
+        rom(i) <= to_fixed_point(sin(real(i) * MATH_PI_OVER_2 / real(ANGLES_IN_90)));
     end generate;
 
     process (clock) is
@@ -33,7 +33,7 @@ begin
         if (rising_edge(clock)) then
             constrained_angle := angle mod FP_2_PI;
 
-            if (FP_PI_OVER_2 < constrained_angle and constrained_angle < FP_3_PI_OVER_2) then
+            if (FP_PI < constrained_angle) then
                 sign := to_fixed_point(-1.0);
             else
                 sign := to_fixed_point(1.0);
@@ -47,7 +47,7 @@ begin
 
             angle_index := angle_index / FP_PI_OVER_2;
             angle_index := angle_index * to_fixed_point(ANGLES_IN_90);
-            cosine <= rom(from_fixed_point_i(angle_index)) * sign;
+            sine <= rom(from_fixed_point_i(angle_index)) * sign;
         end if;
     end process;
 end architecture arch;
