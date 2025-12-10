@@ -89,11 +89,7 @@ package body fixed_point is
         left_signed := signed(left);
         right_signed := signed(right);
 
-        -- result := resize(left_signed * right_signed / to_signed(2 ** FRACTIONAL_LENGTH, fixed_point_t'length), fixed_point_t'length);
-
-        temp_product := left_signed * right_signed;
-        
-        result := temp_product(FRACTIONAL_LENGTH + fixed_point_t'length - 1 downto FRACTIONAL_LENGTH);
+        result := resize(left_signed * right_signed / to_signed(2 ** FRACTIONAL_LENGTH, fixed_point_t'length), fixed_point_t'length);
 
         return fixed_point_t(result);
     end function "*";
