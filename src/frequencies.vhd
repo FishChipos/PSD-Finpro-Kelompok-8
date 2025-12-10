@@ -23,7 +23,7 @@ package body frequency is
         variable freqs : frequencies_t(0 to FREQUENCY_COUNT - 1);
     begin
         for freq_count in 0 to FREQUENCY_COUNT - 1 loop
-            freqs(freq_count) := to_fixed_point(freq);
+            freqs(freq_count) := to_fixed_point(0.1) * to_fixed_point(freq_count);
             freq := freq + FREQUENCY_STEP;
         end loop;
 

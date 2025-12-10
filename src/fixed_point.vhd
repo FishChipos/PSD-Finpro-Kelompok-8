@@ -1,6 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use ieee.math_real.all;
 
 use work.types.all;
 
@@ -23,12 +24,14 @@ package fixed_point is
     function "<"(left, right : fixed_point_t) return boolean;
 
     type samples_t is array(0 to SAMPLE_BUFFER_SIZE - 1) of fixed_point_t;
+
+    constant EPSILON : real := 1.0e-5;
 end package fixed_point;
 
 package body fixed_point is
     function to_fixed_point(r : real) return fixed_point_t is
     begin
-        return fixed_point_t(to_signed(integer(r * (2 ** FRACTIONAL_LENGTH)), fixed_point_t'length));
+        return fixed_point_t(to_signed(integer(r * 2.0 ** FRACTIONAL_LENGTH), fixed_point_t'length));
     end function to_fixed_point;
 
     function to_fixed_point(i : integer) return fixed_point_t is
