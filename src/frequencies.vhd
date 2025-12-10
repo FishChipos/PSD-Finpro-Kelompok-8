@@ -26,7 +26,6 @@ package body frequency is
             freqs(freq_count) := to_fixed_point(0.1) * to_fixed_point(freq_count);
             freq := freq + FREQUENCY_STEP;
         end loop;
-
         return freqs;
     end function fill_frequencies;
 end package body frequency;
