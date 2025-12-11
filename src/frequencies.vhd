@@ -8,7 +8,7 @@ use work.complex.all;
 
 package frequency is
     type frequencies_t is array(natural range <>) of fixed_point_t;
-    constant FREQUENCY_COUNT : natural := 32;
+    constant FREQUENCY_COUNT : natural := 128;
     constant FREQUENCY_STEP : natural := 1;
 
     impure function fill_frequencies return frequencies_t;

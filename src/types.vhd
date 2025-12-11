@@ -4,7 +4,7 @@ use ieee.numeric_std.all;
 use ieee.math_real.all;
 
 package types is
-    constant SAMPLE_BUFFER_SIZE : natural := 32;
+    constant SAMPLE_BUFFER_SIZE : natural := 128;
 
     -- Zero-padding for the STFT
     constant LOWER_INDEX : natural := SAMPLE_BUFFER_SIZE / 4;

@@ -94,9 +94,13 @@ package body fixed_point is
 
     function sqrt(fp : fixed_point_t) return fixed_point_t is
         constant ITERATIONS : natural := 6;
-        variable approx : fixed_point_t := fp;
+        variable approx : fixed_point_t := to_fixed_point(1.0);
     begin
         for i in 1 to ITERATIONS loop
+            if (approx = to_fixed_point(0.0)) then
+                return approx;
+            end if;
+
             approx := (approx + fp / approx) / to_fixed_point(2.0);
         end loop;
 

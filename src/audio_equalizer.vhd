@@ -42,7 +42,7 @@ architecture arch of audio_equalizer is
 
     signal gain : frequency_data_t :=
     (
-        0 to 31 => to_complex(0.0, 0.0),
+        0 to 3 => to_complex(0.0, 0.0),
         others => to_complex(1.0, 1.0)
     );
 
@@ -59,7 +59,7 @@ begin
     adc : entity work.adc(arch) 
         port map (
             raw => audio_input,
-            quantized => sample
+            quantized => quantized_input
         );
 
     sampler : entity work.sampler(arch)
