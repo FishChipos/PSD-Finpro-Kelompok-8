@@ -28,8 +28,9 @@ begin
     end generate;
 
     process (clock) is
-        variable constrained_angle, angle_index : fixed_point_t := to_fixed_point(0.0);
+        variable constrained_angle, angle_index_fp : fixed_point_t := to_fixed_point(0.0);
         variable sign_cosine, sign_sine : fixed_point_t := to_fixed_point(1.0);
+        variable lower_angle_index, upper_angle_index : natural;
     begin
         if (rising_edge(clock)) then
             constrained_angle := angle mod FP_2_PI;
@@ -46,16 +47,20 @@ begin
                 sign_sine := to_fixed_point(1.0);
             end if;
 
-            angle_index := angle mod FP_PI_OVER_2;
+            angle_index_fp := angle mod FP_PI_OVER_2;
 
             if ((FP_PI_OVER_2 < constrained_angle and constrained_angle < FP_PI) or constrained_angle < FP_3_PI_OVER_2) then
-                angle_index := FP_PI_OVER_2 - angle_index;
+                angle_index_fp := FP_PI_OVER_2 - angle_index_fp;
             end if;
 
-            angle_index := angle_index / FP_PI_OVER_2;
-            angle_index := angle_index * to_fixed_point(ANGLES_IN_90);
-            cosine <= rom(from_fixed_point_i(angle_index)) * sign_cosine;
-            sine <= rom(ANGLES_IN_90 - from_fixed_point_i(angle_index)) * sign_sine;
+            angle_index_fp := angle_index_fp / FP_PI_OVER_2;
+            angle_index_fp := angle_index_fp * to_fixed_point(ANGLES_IN_90);
+
+            lower_angle_index := from_fixed_point_i(floor(angle_index_fp));
+            upper_angle_index := from_fixed_point_i(ceil(angle_index_fp));
+            
+            cosine <= (rom(lower_angle_index) + rom(upper_angle_index)) / to_fixed_point(2.0) * sign_cosine;
+            sine <= (rom(ANGLES_IN_90 - lower_angle_index) + rom(ANGLES_IN_90 - upper_angle_index)) / to_fixed_point(2.0) * sign_sine;
         end if;
     end process;
 end architecture arch;

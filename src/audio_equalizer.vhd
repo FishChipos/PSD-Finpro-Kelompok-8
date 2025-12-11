@@ -42,10 +42,11 @@ architecture arch of audio_equalizer is
 
     signal gain : frequency_data_t :=
     (
+        0 to 31 => to_complex(0.0, 0.0),
         others => to_complex(1.0, 1.0)
     );
 
-    signal gain_enable : std_logic := '1';
+    signal gain_enable : std_logic;
 
     signal idft_signal_point : fixed_point_t;
     signal idft_signal : samples_t;
@@ -149,8 +150,8 @@ begin
                         state <= EQ_STFT;
                     end if;
                 when EQ_STFT =>
+                    transformer_start <= '0';
                     if transformer_done = '1' then
-                        transformer_start <= '0';
                         gain_enable <= '1';
                         state <= EQ_MIXING;
                     end if;
@@ -159,9 +160,11 @@ begin
                     transformer_start <= '1';
                     state <= EQ_INVERSE_STFT;
                 when EQ_INVERSE_STFT =>
+                    transformer_start <= '0';
                     if transformer_done = '1' then
-                        state <= EQ_IDLE;
+                        gain_enable <= '0';
                         done <= '1';
+                        state <= EQ_IDLE;
                     end if;
             end case;
         end if;
