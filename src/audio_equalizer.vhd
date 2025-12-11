@@ -35,8 +35,8 @@ architecture arch of audio_equalizer is
     signal sine : fixed_point_t;
 
     signal transformer_mode, transformer_start, transformer_done : std_logic;
-    signal stft_frequency_datum : complex_t;
-    signal stft_frequency_data : frequency_data_t;
+    signal dft_frequency_datum : complex_t;
+    signal dft_frequency_data : frequency_data_t;
 
     signal gain_frequency_data : frequency_data_t;
 
@@ -47,8 +47,8 @@ architecture arch of audio_equalizer is
 
     signal gain_enable : std_logic := '1';
 
-    signal istft_signal_point : fixed_point_t;
-    signal istft_signal : samples_t;
+    signal idft_signal_point : fixed_point_t;
+    signal idft_signal : samples_t;
 begin
     clock_gen: entity work.clock_generator(rtl)
         port map (
@@ -92,13 +92,13 @@ begin
             start => transformer_start,
             done => transformer_done,
 
-            stft_samples => samples,
-            stft_frequency_datum => stft_frequency_datum,
-            stft_frequency_data => stft_frequency_data,
+            dft_samples => samples,
+            dft_frequency_datum => dft_frequency_datum,
+            dft_frequency_data => dft_frequency_data,
             
-            istft_frequency_data => gain_frequency_data,
-            istft_signal_point => istft_signal_point,
-            istft_signal => istft_signal,
+            idft_frequency_data => gain_frequency_data,
+            idft_signal_point => idft_signal_point,
+            idft_signal => idft_signal,
 
             trig_angle => angle_transformer,
             cosine => cosine,
@@ -113,7 +113,7 @@ begin
             PORT MAP (
                 en => gain_enable, 
                 clk => clock,
-                freq_amp  => stft_frequency_data(i),
+                freq_amp  => dft_frequency_data(i),
                 gain_val => gain(i),
                 eq_amp => gain_frequency_data(i)
             );
@@ -123,7 +123,7 @@ begin
     begin
         dac : entity work.dac(arch)
             port map(
-                digital_in => istft_signal(LOWER_INDEX + i),
+                digital_in => idft_signal(LOWER_INDEX + i),
                 analog_out => audio_output(i)
             );
     end generate;
