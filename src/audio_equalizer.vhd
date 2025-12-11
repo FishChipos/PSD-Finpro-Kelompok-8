@@ -56,10 +56,10 @@ begin
             clock => clock
         );
 
-    adc : entity work.adc(arch)
+    adc : entity work.adc(arch) 
         port map (
             raw => audio_input,
-            quantized => quantized_input
+            quantized => sample
         );
 
     sampler : entity work.sampler(arch)
@@ -106,20 +106,14 @@ begin
             sine => sine
         );
 
-
-    -- to loop gain for each freq
-    generate_gain : for i in 0 to FREQUENCY_COUNT-1 generate
-    begin
-        gain_block : entity work.frequency_gain(rtl)
-            PORT MAP (
-                en => gain_enable, 
-                clk => clock,
-                freq_amp  => dft_frequency_data(i),
-                gain_val => gain(i),
-                eq_amp => gain_frequency_data(i)
-            );
-    end generate;
-
+    gain_block : entity work.gain_block(arch) port map (
+        clock => clock,
+        gain_enable => gain_enable,
+        dft_frequency_data => dft_frequency_data,
+        gain => gain,
+        gain_frequency_data => gain_frequency_data
+    );
+    
     generate_dac : for i in 0 to UPPER_INDEX - LOWER_INDEX generate
     begin
         dac : entity work.dac(arch)
@@ -128,21 +122,12 @@ begin
                 analog_out => audio_output(i)
             );
     end generate;
-    
 
     process(clock)
     begin
         if rising_edge(clock) then
             case state is
                 when EQ_IDLE =>
-                    -- sample_buffer_enable <= '0';
-
-                    -- transformer_mode <= '0';
-                    -- transformer_start <= '0';
-                    -- transformer_done <= '0';
-
-                    -- gain_enable <= '0';
-
                     if (start = '1') then
                         state <= EQ_SAMPLING;
                         done <= '0';
