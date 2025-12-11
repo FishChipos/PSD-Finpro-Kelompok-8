@@ -84,7 +84,6 @@ package body fixed_point is
 
     function "*"(left, right : fixed_point_t) return fixed_point_t is
         variable left_signed, right_signed, result : signed(fixed_point_t'length - 1 downto 0);
-        variable temp_product : signed(2 * fixed_point_t'length - 1 downto 0);
     begin
         left_signed := signed(left);
         right_signed := signed(right);
