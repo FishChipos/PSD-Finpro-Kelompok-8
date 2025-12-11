@@ -12,7 +12,7 @@ entity audio_equalizer is
         audio_input : in audio_voltage_t;
         audio_output : out audio_voltage_buffer_t;
         start : in std_logic;
-        sampling, done, output_ready : out std_logic
+        sampling, done : out std_logic
     );
 end entity audio_equalizer;
 
@@ -135,6 +135,14 @@ begin
         if rising_edge(clock) then
             case state is
                 when EQ_IDLE =>
+                    -- sample_buffer_enable <= '0';
+
+                    -- transformer_mode <= '0';
+                    -- transformer_start <= '0';
+                    -- transformer_done <= '0';
+
+                    -- gain_enable <= '0';
+
                     if (start = '1') then
                         state <= EQ_SAMPLING;
                         done <= '0';

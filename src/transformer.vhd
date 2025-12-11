@@ -47,6 +47,8 @@ begin
         if (rising_edge(clock)) then
             case (state) is
                 when TRANSFORMER_IDLE =>
+                    done <= '0';
+                    
                     if (start = '1') then
                         frequency_index := 0;
                         sample_index := 0;
@@ -113,7 +115,6 @@ begin
                     end if;
 
                 when TRANSFORMER_DONE =>
-                    done <= '0';
                     state <= TRANSFORMER_IDLE;
             end case;
         end if;
