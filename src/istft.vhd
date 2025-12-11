@@ -19,9 +19,8 @@ entity istft is
         samples : out samples_t := (others => to_fixed_point(0.0));
         done : out std_logic := '0';
         
-        cos_angle : out fixed_point_t := to_fixed_point(0.0);
+        trig_angle : out fixed_point_t := to_fixed_point(0.0);
         cosine : in fixed_point_t := to_fixed_point(0.0);
-        sin_angle : out fixed_point_t := (others => '0');
         sine : in fixed_point_t := to_fixed_point(0.0)
     );
 end entity istft;
@@ -51,8 +50,7 @@ begin
                 
                     angle := FP_2_PI * frequency;
                     angle := angle * (to_fixed_point(sample_index) / to_fixed_point(SAMPLE_BUFFER_SIZE));
-                    cos_angle <= angle;
-                    sin_angle <= angle;
+                    trig_angle <= angle;
 
                     state <= ISTFT_CALCULATING;
 
