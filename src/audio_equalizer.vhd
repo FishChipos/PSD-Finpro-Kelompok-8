@@ -12,7 +12,7 @@ entity audio_equalizer is
         audio_input : in audio_voltage_t;
         audio_output : out audio_voltage_buffer_t;
         start : in std_logic;
-        sampling, done, output_ready : out std_logic
+        sampling, done : out std_logic
     );
 end entity audio_equalizer;
 
@@ -30,40 +30,33 @@ architecture arch of audio_equalizer is
     signal sample_buffer_enable : std_logic;
     signal sample_buffer_ready : std_logic;
 
-    signal cos_angle_stft, cos_angle_istft : fixed_point_t;
-    signal cos_angle : fixed_point_t;
-    signal cos_angle_sel : std_logic := '0';
+    signal angle_transformer : fixed_point_t;
     signal cosine : fixed_point_t;
-
-    signal sin_angle_stft, sin_angle_istft : fixed_point_t;
-    signal sin_angle : fixed_point_t;
-    signal sin_angle_sel : std_logic := '0';
     signal sine : fixed_point_t;
 
-    signal stft_start, stft_done : std_logic;
-    signal stft_frequency_datum : complex_t;
-    signal stft_frequency_data : frequency_data_t;
+    signal transformer_mode, transformer_start, transformer_done : std_logic;
+    signal dft_frequency_datum : complex_t;
+    signal dft_frequency_data : frequency_data_t;
 
     signal gain_frequency_data : frequency_data_t;
 
     signal gain : frequency_data_t :=
     (
+        0 to 3 => to_complex(0.0, 0.0),
         others => to_complex(1.0, 1.0)
     );
 
-    signal gain_enable : std_logic := '1';
+    signal gain_enable : std_logic;
 
-    signal istft_start : std_logic := '0'; 
-    signal istft_done : std_logic;
-    signal istft_sample : fixed_point_t;
-    signal istft_samples : samples_t;
+    signal idft_signal_point : fixed_point_t;
+    signal idft_signal : samples_t;
 begin
     clock_gen: entity work.clock_generator(rtl)
         port map (
             clock => clock
         );
 
-    adc : entity work.adc(arch)
+    adc : entity work.adc(arch) 
         port map (
             raw => audio_input,
             quantized => quantized_input
@@ -85,74 +78,50 @@ begin
             samples => samples
         );
 
-    cos_angle <= cos_angle_stft when cos_angle_sel = '0' else cos_angle_istft;
-    sin_angle <= sin_angle_stft when sin_angle_sel = '0' else sin_angle_istft;
-
-    cos_lookup_table : entity work.cos_lookup_table(arch)
+    trig_lookup_table : entity work.trig_lookup_table(arch)
         port map (
             clock => clock,
-            angle => cos_angle,
-            cosine => cosine
-        );
-
-    sin_lookup_table : entity work.sin_lookup_table(arch)
-        port map (
-            clock => clock,
-            angle => sin_angle,
-            sine => sine
-        );
-
-    stft : entity work.stft(arch)
-        port map (
-            clock => clock,
-            samples => samples,
-            frequency_datum => stft_frequency_datum,
-            frequency_data => stft_frequency_data,
-            start => stft_start,
-            done => stft_done,
-            cos_angle => cos_angle_stft,
-            sin_angle => sin_angle_stft,
+            angle => angle_transformer,
             cosine => cosine,
             sine => sine
         );
 
+    transformer : entity work.transformer(arch)
+        port map (
+            clock => clock,
+            mode => transformer_mode,
+            start => transformer_start,
+            done => transformer_done,
 
-    -- to loop gain for each freq
-    generate_gain : for i in 0 to FREQUENCY_COUNT-1 generate
-    begin
-        gain_block : entity work.frequency_gain(rtl)
-            PORT MAP (
-                en => gain_enable, 
-                clk => clock,
-                freq_amp  => stft_frequency_data(i),
-                gain_val => gain(i),
-                eq_amp => gain_frequency_data(i)
-            );
-    end generate;
+            dft_samples => samples,
+            dft_frequency_datum => dft_frequency_datum,
+            dft_frequency_data => dft_frequency_data,
+            
+            idft_frequency_data => gain_frequency_data,
+            idft_signal_point => idft_signal_point,
+            idft_signal => idft_signal,
 
-    istft : entity work.istft(rtl) 
-        port map(
-            clk => clock, 
-            en => istft_start,
-            frequency_data => gain_frequency_data,
-            sample => istft_sample,
-            samples => istft_samples,
-            done => istft_done,
-            cos_angle => cos_angle_istft,
-            sin_angle => sin_angle_istft,
+            trig_angle => angle_transformer,
             cosine => cosine,
             sine => sine
         );
 
+    gain_block : entity work.gain_block(arch) port map (
+        clock => clock,
+        gain_enable => gain_enable,
+        dft_frequency_data => dft_frequency_data,
+        gain => gain,
+        gain_frequency_data => gain_frequency_data
+    );
+    
     generate_dac : for i in 0 to UPPER_INDEX - LOWER_INDEX generate
     begin
         dac : entity work.dac(arch)
             port map(
-                digital_in => istft_samples(LOWER_INDEX + i),
+                digital_in => idft_signal(LOWER_INDEX + i),
                 analog_out => audio_output(i)
             );
     end generate;
-    
 
     process(clock)
     begin
@@ -168,27 +137,27 @@ begin
                 when EQ_SAMPLING =>
                     if (sample_buffer_ready = '1') then
                         sample_buffer_enable <= '0';
-                        cos_angle_sel <= '0';
-                        sin_angle_sel <= '0';
-                        stft_start <= '1';
+                        transformer_mode <= '0';
+                        transformer_start <= '1';
                         sampling <= '0';
                         state <= EQ_STFT;
                     end if;
                 when EQ_STFT =>
-                    if stft_done = '1' then
-                        stft_start <= '0';
+                    transformer_start <= '0';
+                    if transformer_done = '1' then
+                        gain_enable <= '1';
                         state <= EQ_MIXING;
                     end if;
                 when EQ_MIXING =>
+                    transformer_mode <= '1';
+                    transformer_start <= '1';
                     state <= EQ_INVERSE_STFT;
-                    cos_angle_sel <= '1';
-                    sin_angle_sel <= '1';
-                    istft_start <= '1';
                 when EQ_INVERSE_STFT =>
-                    if istft_done = '1' then
-                        istft_start <= '0';
-                        state <= EQ_IDLE;
+                    transformer_start <= '0';
+                    if transformer_done = '1' then
+                        gain_enable <= '0';
                         done <= '1';
+                        state <= EQ_IDLE;
                     end if;
             end case;
         end if;
