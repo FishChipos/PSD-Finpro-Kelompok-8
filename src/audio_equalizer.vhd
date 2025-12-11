@@ -30,14 +30,10 @@ architecture arch of audio_equalizer is
     signal sample_buffer_enable : std_logic;
     signal sample_buffer_ready : std_logic;
 
-    signal cos_angle_stft, cos_angle_istft : fixed_point_t;
-    signal cos_angle : fixed_point_t;
-    signal cos_angle_sel : std_logic := '0';
+    signal angle_stft, angle_istft : fixed_point_t;
+    signal angle : fixed_point_t;
+    signal angle_sel : std_logic := '0';
     signal cosine : fixed_point_t;
-
-    signal sin_angle_stft, sin_angle_istft : fixed_point_t;
-    signal sin_angle : fixed_point_t;
-    signal sin_angle_sel : std_logic := '0';
     signal sine : fixed_point_t;
 
     signal stft_start, stft_done : std_logic;
@@ -85,20 +81,13 @@ begin
             samples => samples
         );
 
-    cos_angle <= cos_angle_stft when cos_angle_sel = '0' else cos_angle_istft;
-    sin_angle <= sin_angle_stft when sin_angle_sel = '0' else sin_angle_istft;
+    angle <= angle_stft when angle_sel = '0' else angle_istft;
 
-    cos_lookup_table : entity work.cos_lookup_table(arch)
+    trig_lookup_table : entity work.trig_lookup_table(arch)
         port map (
             clock => clock,
-            angle => cos_angle,
-            cosine => cosine
-        );
-
-    sin_lookup_table : entity work.sin_lookup_table(arch)
-        port map (
-            clock => clock,
-            angle => sin_angle,
+            angle => angle,
+            cosine => cosine,
             sine => sine
         );
 
@@ -110,8 +99,7 @@ begin
             frequency_data => stft_frequency_data,
             start => stft_start,
             done => stft_done,
-            cos_angle => cos_angle_stft,
-            sin_angle => sin_angle_stft,
+            trig_angle => angle_stft,
             cosine => cosine,
             sine => sine
         );
@@ -138,8 +126,7 @@ begin
             sample => istft_sample,
             samples => istft_samples,
             done => istft_done,
-            cos_angle => cos_angle_istft,
-            sin_angle => sin_angle_istft,
+            trig_angle => angle_istft,
             cosine => cosine,
             sine => sine
         );
@@ -168,8 +155,7 @@ begin
                 when EQ_SAMPLING =>
                     if (sample_buffer_ready = '1') then
                         sample_buffer_enable <= '0';
-                        cos_angle_sel <= '0';
-                        sin_angle_sel <= '0';
+                        angle_sel <= '0';
                         stft_start <= '1';
                         sampling <= '0';
                         state <= EQ_STFT;
@@ -181,8 +167,7 @@ begin
                     end if;
                 when EQ_MIXING =>
                     state <= EQ_INVERSE_STFT;
-                    cos_angle_sel <= '1';
-                    sin_angle_sel <= '1';
+                    angle_sel <= '1';
                     istft_start <= '1';
                 when EQ_INVERSE_STFT =>
                     if istft_done = '1' then
