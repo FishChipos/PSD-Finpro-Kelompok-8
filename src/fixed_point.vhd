@@ -23,9 +23,11 @@ package fixed_point is
     function "mod"(left, right : fixed_point_t) return fixed_point_t;
     function "<"(left, right : fixed_point_t) return boolean;
 
+    type window_t is array(0 to SAMPLE_BUFFER_SIZE - 1) of fixed_point_t;
     type samples_t is array(0 to SAMPLE_BUFFER_SIZE - 1) of fixed_point_t;
-
-    constant EPSILON : real := 1.0e-5;
+    
+    type windowed_block_t is array(0 to SAMPLE_BUFFER_SIZE - 1) of fixed_point_t;
+    type windowed_blocks_t is array(0 to SAMPLE_BUFFER_SIZE - 1) of windowed_block_t;
 end package fixed_point;
 
 package body fixed_point is

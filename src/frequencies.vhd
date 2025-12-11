@@ -15,6 +15,7 @@ package frequency is
     constant FREQUENCIES : frequencies_t := fill_frequencies;
 
     type frequency_data_t is array(natural range 0 to FREQUENCY_COUNT - 1) of complex_t;
+    type frequency_data_blocks_t is array(natural range 0 to SAMPLE_BUFFER_SIZE - 1) of frequency_data_t;
 end package frequency;
 
 package body frequency is

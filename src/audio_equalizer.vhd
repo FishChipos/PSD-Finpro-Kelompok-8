@@ -36,8 +36,9 @@ architecture arch of audio_equalizer is
     signal cosine : fixed_point_t;
     signal sine : fixed_point_t;
 
+    signal window : window_t;
+
     signal stft_start, stft_done : std_logic;
-    signal stft_frequency_datum : complex_t;
     signal stft_frequency_data : frequency_data_t;
 
     signal gain_frequency_data : frequency_data_t;
@@ -91,17 +92,22 @@ begin
             sine => sine
         );
 
+    window_lookup_table : entity work.window_lookup_table(arch)
+        port map (
+            window => window
+        );
+
     stft : entity work.stft(arch)
         port map (
             clock => clock,
             samples => samples,
-            frequency_datum => stft_frequency_datum,
-            frequency_data => stft_frequency_data,
+            data => stft_frequency_data,
             start => stft_start,
             done => stft_done,
             trig_angle => angle_stft,
             cosine => cosine,
-            sine => sine
+            sine => sine,
+            window => window
         );
 
 
@@ -122,13 +128,14 @@ begin
         port map(
             clk => clock, 
             en => istft_start,
-            frequency_data => gain_frequency_data,
+            data => stft_frequency_data,
             sample => istft_sample,
             samples => istft_samples,
             done => istft_done,
             trig_angle => angle_istft,
             cosine => cosine,
-            sine => sine
+            sine => sine,
+            window => window
         );
 
     generate_dac : for i in 0 to UPPER_INDEX - LOWER_INDEX generate
