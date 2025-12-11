@@ -42,7 +42,7 @@ package body complex is
     -- For now this will use non-synthesizable code.
     function mag(c : complex_t) return fixed_point_t is
     begin
-        return to_fixed_point(sqrt(from_fixed_point_r(c.re * c.re + c.im * c.im)));
+        return sqrt(c.re * c.re + c.im * c.im);
     end function mag;
 
     function "+"(left, right : complex_t) return complex_t is

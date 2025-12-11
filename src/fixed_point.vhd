@@ -16,6 +16,10 @@ package fixed_point is
     function from_fixed_point_r(fp : fixed_point_t) return real;
     function from_fixed_point_i(fp : fixed_point_t) return integer;
 
+    function floor(fp : fixed_point_t) return fixed_point_t;
+    function ceil(fp : fixed_point_t) return fixed_point_t;
+    function sqrt(fp : fixed_point_t) return fixed_point_t;
+
     function "+"(left, right : fixed_point_t) return fixed_point_t;
     function "-"(left, right : fixed_point_t) return fixed_point_t;
     function "*"(left, right : fixed_point_t) return fixed_point_t;
@@ -60,6 +64,49 @@ package body fixed_point is
         return to_integer(signed(fp)) / (2 ** FRACTIONAL_LENGTH);
     end function;
 
+    function floor(fp : fixed_point_t) return fixed_point_t is
+        constant ALL_ZEROS : fixed_point_t := (others => '0');
+        variable floored : fixed_point_t := fp;
+    begin
+        if (floored(FRACTIONAL_LENGTH - 1 downto 0) = ALL_ZEROS(FRACTIONAL_LENGTH - 1 downto 0)) then
+            return fp;
+        end if;
+
+        floored(FRACTIONAL_LENGTH - 1 downto 0) := (others => '0');
+        floored(FRACTIONAL_LENGTH) := '0';
+
+        return floored;
+    end function;
+
+    function ceil(fp : fixed_point_t) return fixed_point_t is
+        constant ALL_ZEROS : fixed_point_t := (others => '0');
+        variable ceiled : fixed_point_t := fp;
+    begin
+        if (ceiled(FRACTIONAL_LENGTH - 1 downto 0) = ALL_ZEROS(FRACTIONAL_LENGTH - 1 downto 0)) then
+            return fp;    
+        end if;
+        
+        ceiled(FRACTIONAL_LENGTH - 1 downto 0) := (others => '0');
+        ceiled(FRACTIONAL_LENGTH) := '1';
+
+        return ceiled;
+    end function;
+
+    function sqrt(fp : fixed_point_t) return fixed_point_t is
+        constant ITERATIONS : natural := 6;
+        variable approx : fixed_point_t := to_fixed_point(1.0);
+    begin
+        for i in 1 to ITERATIONS loop
+            if (approx = to_fixed_point(0.0)) then
+                return approx;
+            end if;
+
+            approx := (approx + fp / approx) / to_fixed_point(2.0);
+        end loop;
+
+        return approx;
+    end function;
+
     function "+"(left, right : fixed_point_t) return fixed_point_t is
         variable left_signed, right_signed, result : signed(fixed_point_t'length - 1 downto 0);
     begin
@@ -84,7 +131,6 @@ package body fixed_point is
 
     function "*"(left, right : fixed_point_t) return fixed_point_t is
         variable left_signed, right_signed, result : signed(fixed_point_t'length - 1 downto 0);
-        variable temp_product : signed(2 * fixed_point_t'length - 1 downto 0);
     begin
         left_signed := signed(left);
         right_signed := signed(right);
